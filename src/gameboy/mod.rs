@@ -24,6 +24,7 @@ const ROM_BANK_SIZE: u16 = 16384;
 
 impl Gameboy {
 
+    // TODO: take a path to a rom
     pub fn load_game(&mut self) {
         let mut f = File::open("/Users/adam/Projects/rustyboy/tetris.gb")
             // TODO: handle this
