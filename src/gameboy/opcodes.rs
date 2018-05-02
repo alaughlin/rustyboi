@@ -1,5 +1,8 @@
 use gameboy::mmu;
 
+// function naming method:
+// {operation}_{is_address}_{register/address}_{incr/decr}_{is_address}_{register/address}_{incr/decr}
+
 ///// 8 bit loads /////
 
 // 0x06, 0x0E, 0x16, 0x1E, 0x26, 0x2E
@@ -19,24 +22,17 @@ pub fn ld_r1_r2(pc: &mut u16, r1: &mut u8, r2: u8) {
     *pc += 1;
 }
 
-// 0x46, 0x4E, 0x56, 0x5E, 0x66, 0x6E, 0x7E
-// loads value at (hl) into register r1
-pub fn ld_r1_hl(pc: &mut u16, mmu: &mut mmu::MMU, hl: u16, r1: &mut u8) {
-    *r1 = mmu.read(hl);
-    *pc += 1;
-}
-
 // 0x36
-// loads value n into (hl)
-pub fn ld_hl_n(pc: &mut u16, mmu: &mut mmu::MMU, hl: u16, n: u8) {
-    mmu.write(hl, n);
+// loads value n into (rr)
+pub fn ld_mem_rr_n(pc: &mut u16, mmu: &mut mmu::MMU, rr: u16, n: u8) {
+    mmu.write(rr, n);
     *pc += 2;
 }
 
-// 0x70, 0x71, 0x72, 0x73, 0x74, 0x75
-// loads value in register r2 into (hl)
-pub fn ld_hl_r2(pc: &mut u16, mmu: &mut mmu::MMU, hl: u16, r2: u8) {
-    mmu.write(hl, r2);
+// 0x02, 0x12, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x77,
+// loads value in register r into (rr)
+pub fn ld_mem_rr_r(pc: &mut u16, mmu: &mut mmu::MMU, rr: u16, r: u8) {
+    mmu.write(rr, r);
     *pc += 1;
 }
 
@@ -47,33 +43,87 @@ pub fn ld_r1_r1(pc: &mut u16, r1: &mut u8) {
     *pc += 1;
 }
 
-// 0x0A, 0x1A, 0x7E
+// 0x0A, 0x1A, 0x46, 0x4E, 0x56, 0x5E, 0x66, 0x6E, 0x7E
 // loads value at (rr) into register r
-pub fn ld_r_rr(pc: &mut u16, mmu: &mut mmu::MMU, rr: u16, r: &mut u8) {
+pub fn ld_r_mem_rr(pc: &mut u16, mmu: &mut mmu::MMU, rr: u16, r: &mut u8) {
     *r = mmu.read(rr);
-    *pc += 1;
-}
-
-// 0x02, 0x12, 0x77
-// loads value in register r into (rr)
-pub fn ld_rr_r(pc: &mut u16, mmu: &mut mmu::MMU, rr: u16, r: u8) {
-    mmu.write(rr, r);
     *pc += 1;
 }
 
 // 0xEA
 // loads value in register r into (nn)
-pub fn ld_nn_r(pc: &mut u16, mmu: &mut mmu::MMU, nn: u16, r: u8) {
+pub fn ld_mem_nn_r(pc: &mut u16, mmu: &mut mmu::MMU, nn: u16, r: u8) {
     mmu.write(nn, r);
     *pc += 3;
 }
 
+// 0xF2
+// loads value at (r2) into register r1
+pub fn ld_r1_mem_r2(pc: &mut u16, mmu: &mut mmu::MMU, r1: &mut u8, r2: u8) {
+    *r1 = mmu.read(r2 as u16);
+    *pc += 1;
+}
+
+// 0xE2
+// loads value in register r2 into (r1)
+pub fn ld_mem_r1_r2(pc: &mut u16, mmu: &mut mmu::MMU, r1: u8, r2: u8) {
+    mmu.write(r1 as u16, r2);
+    *pc += 2;
+}
+
+// 0x22
+// loads value in register r into (rr), then increments value at (rr)
+pub fn ld_mem_rr_inc_r(pc: &mut u16, mmu: &mut mmu::MMU, rr: u16, r: u8) {
+    mmu.write(rr, r);
+    mmu.incr(rr);
+    *pc += 2;
+}
+
+// 0x2A
+// loads value at (rr) into r, then increments value at (rr)
+pub fn ld_r_mem_rr_inc(pc: &mut u16, mmu: &mut mmu::MMU, rr: u16, r: &mut u8) {
+    *r = mmu.read(rr);
+    mmu.incr(rr);
+    *pc += 1;
+}
+
+// 0x32
+// loads value in register r into (rr), then decrements value at (rr)
+pub fn ld_mem_rr_dec_r(pc: &mut u16, mmu: &mut mmu::MMU, rr: u16, r: u8) {
+    mmu.write(rr, r);
+    mmu.decr(rr);
+    *pc += 2;
+}
+
+// 0x3A
+// loads value at (rr) into r, then decrements value at (rr)
+pub fn ld_r_mem_rr_dec(pc: &mut u16, mmu: &mut mmu::MMU, rr: u16, r: &mut u8) {
+    *r = mmu.read(rr);
+    mmu.decr(rr);
+    *pc += 1;
+}
+
+// 0xE0
+// loads value in register r into (n)
+pub fn ld_mem_n_r(pc: &mut u16, mmu: &mut mmu::MMU, n: u16, r: u8) {
+    mmu.write(n, r);
+    *pc += 2;
+}
+
+// 0xF0
+// loads value at (n) into register r
+pub fn ld_r_mem_n(pc: &mut u16, mmu: &mut mmu::MMU, n: u16, r: &mut u8) {
+    *r = mmu.read(n);
+    *pc += 2;
+}
+
 ///// 16 bit loads /////
 
-// 0x21
-pub fn ld_hl_nn(pc: &mut u16, mmu: &mut mmu::MMU, addr: u16, n1: u8, n2: u8) {
-    mmu.write(addr, n1);
-    mmu.write(addr+8, n2);
+// 0x01, 0x11, 0x21
+// loads value nn into registers r1 and r2
+pub fn ld_r1r2_nn(pc: &mut u16, r1: &mut u8, r2: &mut u8, nn: u16) {
+    *r1 = (nn >> 8) as u8;
+    *r2 = nn as u8;
 
     *pc += 3;
 }

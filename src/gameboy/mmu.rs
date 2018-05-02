@@ -13,7 +13,8 @@
 // FFFF        Interrupt Enable Register
 
 pub struct MMU {
-    pub rom: Vec<u8>,
+    pub rom_bank_0: Vec<u8>,
+    pub rom_bank_nn: Vec<u8>,
     pub vram: Vec<u8>,
     pub eram: Vec<u8>,
     pub wram: Vec<u8>,
@@ -24,7 +25,8 @@ impl Default for MMU {
 
     fn default() -> MMU {
         MMU {
-            rom: vec![0; 32768],
+            rom_bank_0: vec![0; 16384],
+            rom_bank_nn: vec![0; 16384],
             vram: vec![0; 8192],
             eram: vec![0; 8192],
             wram: vec![0; 8192],
@@ -69,8 +71,10 @@ impl MMU {
     }
 
     fn get_memory_slice(&mut self, address: u16) -> (&mut Vec<u8>, u16) {
-        if address < 0x8000 {
-            return (&mut self.rom, 0x0000);
+        if address < 0x4000 {
+            return (&mut self.rom_bank_0, 0x0000);
+        } else if address < 0x8000 {
+            return (&mut self.rom_bank_nn, 0x4000);
         } else if address < 0xA000 {
             return (&mut self.vram, 0x8000);
         } else if address < 0xC000 {
