@@ -20,6 +20,8 @@ pub struct Gameboy {
     pub mmu: mmu::MMU,
 }
 
+const ROM_BANK_SIZE: u16 = 16384;
+
 impl Gameboy {
 
     pub fn load_game(&mut self) {
@@ -27,8 +29,10 @@ impl Gameboy {
             // TODO: handle this
             .expect("file not found");
 
-        self.mmu.rom_bank_0 = get_rom_bank_vec(&mut f, 0);
-        self.mmu.rom_bank_nn = get_rom_bank_vec(&mut f, 1);
+        let bank_0 = get_rom_bank_vec(&mut f, 0);
+        let bank_1 = get_rom_bank_vec(&mut f, 1);
+
+        self.mmu.load_game(bank_0, bank_1);
     }
 
     pub fn step(&mut self) {
@@ -353,10 +357,10 @@ impl Gameboy {
 }
 
 fn get_rom_bank_vec(file: &mut File, bank_number: u16) -> Vec<u8> {
-    let mut buffer = [0; 16384];
+    let mut buffer = [0; ROM_BANK_SIZE as usize];
 
     if bank_number > 0 {
-        file.seek(SeekFrom::Start((bank_number * 16384) as u64))
+        file.seek(SeekFrom::Start((bank_number * ROM_BANK_SIZE) as u64))
             // TODO: handle this
             .expect("wtf");
     }

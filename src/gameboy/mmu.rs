@@ -70,6 +70,11 @@ impl MMU {
         self.write(*sp, data);
     }
 
+    pub fn load_game(&mut self, bank_0: Vec<u8>, bank_1: Vec<u8>) {
+        self.rom_bank_0 = bank_0;
+        self.rom_bank_nn = bank_1;
+    }
+
     fn get_memory_slice(&mut self, address: u16) -> (&mut Vec<u8>, u16) {
         if address < 0x4000 {
             return (&mut self.rom_bank_0, 0x0000);
