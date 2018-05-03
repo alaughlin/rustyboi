@@ -58,16 +58,16 @@ pub fn ld_mem_nn_r(pc: &mut u16, mmu: &mut mmu::MMU, nn: u16, r: u8) {
 }
 
 // 0xF2
-// loads value at (r2) into register r1
+// loads value at (r2+0xFF00) into register r1
 pub fn ld_r1_mem_r2(pc: &mut u16, mmu: &mut mmu::MMU, r1: &mut u8, r2: u8) {
-    *r1 = mmu.read(r2 as u16);
+    *r1 = mmu.read((r2 as u16)+0xFF00);
     *pc += 1;
 }
 
 // 0xE2
-// loads value in register r2 into (r1)
+// loads value in register r2 into (r1 + 0xFF00)
 pub fn ld_mem_r1_r2(pc: &mut u16, mmu: &mut mmu::MMU, r1: u8, r2: u8) {
-    mmu.write(r1 as u16, r2);
+    mmu.write((r1 as u16)+0xFF00, r2);
     *pc += 2;
 }
 
@@ -111,9 +111,9 @@ pub fn ld_mem_n_r(pc: &mut u16, mmu: &mut mmu::MMU, n: u16, r: u8) {
 }
 
 // 0xF0
-// loads value at (n) into register r
-pub fn ld_r_mem_n(pc: &mut u16, mmu: &mut mmu::MMU, n: u16, r: &mut u8) {
-    *r = mmu.read(n);
+// loads value at (n+0xFF00) into register r
+pub fn ld_r_mem_n(pc: &mut u16, mmu: &mut mmu::MMU, n: u8, r: &mut u8) {
+    *r = mmu.read((n as u16)+0xFF00);
     *pc += 2;
 }
 
@@ -121,12 +121,75 @@ pub fn ld_r_mem_n(pc: &mut u16, mmu: &mut mmu::MMU, n: u16, r: &mut u8) {
 
 // 0x01, 0x11, 0x21
 // loads value nn into registers r1 and r2
-pub fn ld_r1r2_nn(pc: &mut u16, r1: &mut u8, r2: &mut u8, nn: u16) {
+pub fn ld_rr_nn(pc: &mut u16, r1: &mut u8, r2: &mut u8, nn: u16) {
     *r1 = (nn >> 8) as u8;
     *r2 = nn as u8;
 
     *pc += 3;
 }
+
+// 0x08
+// loads sp into (nn)
+pub fn ld_mem_nn_sp(pc: &mut u16, mmu: &mut mmu::MMU, nn: u16, sp: u16) {
+    mmu.write(nn, (sp >> 8) as u8);
+    mmu.write(nn+8, sp as u8);
+    *pc += 3;
+}
+
+// 0x31
+// loads value nn into sp
+pub fn ld_sp_nn(pc: &mut u16, sp: &mut u16, nn: u16) {
+    *sp = nn;
+    *pc += 3;
+}
+
+// 0xC1, 0xD1, 0xE1, 0xF1
+// pops stack into rr
+pub fn pop_rr(pc: &mut u16, mmu: &mut mmu::MMU, sp: &mut u16, r1: &mut u8, r2: &mut u8) {
+    *r2 = mmu.pop(sp);
+    *r1 = mmu.pop(sp);
+    *pc += 1;
+}
+
+// 0xC5, 0xD5, 0xE5, 0xF5
+// pushes rr onto stack
+pub fn push_rr(pc: &mut u16, mmu: &mut mmu::MMU, sp: &mut u16, r1: u8, r2: u8) {
+    mmu.push(sp, r1);
+    mmu.push(sp, r2);
+    *pc += 1;
+}
+
+// 0xF8
+// loads sp + n into rr
+pub fn ld_rr_spn(pc: &mut u16, r1: &mut u8, r2: &mut u8, sp: u16, n: u8, f: &mut u8) {
+    *r1 = ((sp + (n as u16)) >> 8) as u8;
+    *r2 = (sp + (n as u16)) as u8;
+
+    // reset z and n (might as well reset everything)
+    *f &= 0;
+
+    // check if carry happened in last nibble and set h if so
+    if (sp & 0b1111) + ((n as u16) & 0b1111) > 0b1111 {
+        // set h
+        *f |= 0b00100000
+    }
+
+    // check if carry happened and set c if so
+    if sp + (n as u16) > 0b1111111111111111 {
+        // set c
+        *f |= 0b00010000
+    }
+
+    *pc += 2;
+}
+
+// 0xF9
+// loads value in hl into sp
+pub fn ld_sp_hl(pc: &mut u16, sp: &mut u16, hl: u16) {
+    *sp = hl;
+    *pc += 1;
+}
+
 
 ///// 8 bit ALU /////
 

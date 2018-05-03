@@ -20,6 +20,10 @@ pub struct Gameboy {
     pub mmu: mmu::MMU,
 }
 
+// f: u8 flag register
+// 7 6 5 4 3 2 1 0
+// Z N H C 0 0 0 0
+
 const ROM_BANK_SIZE: u16 = 16384;
 
 impl Gameboy {
@@ -46,7 +50,7 @@ impl Gameboy {
             },
             0x01 => {
                 let nn = get_nn(&mut self.pc, &mut self.mmu, false);
-                opcodes::ld_r1r2_nn(&mut self.pc, &mut self.b, &mut self.c, nn);
+                opcodes::ld_rr_nn(&mut self.pc, &mut self.b, &mut self.c, nn);
             },
             0x02 => {
                 let bc = get_address(self.b, self.c);
@@ -55,6 +59,10 @@ impl Gameboy {
             0x06 => {
                 let n = get_n(&mut self.pc, &mut self.mmu);
                 opcodes::ld_r_n(&mut self.pc, &mut self.b, n);
+            },
+            0x08 => {
+                let nn = get_nn(&mut self.pc, &mut self.mmu, false);
+                opcodes::ld_mem_nn_sp(&mut self.pc, &mut self.mmu, nn, self.sp)
             },
             0x0A => {
                 let bc = get_address(self.b, self.c);
@@ -66,7 +74,7 @@ impl Gameboy {
             },
             0x11 => {
                 let nn = get_nn(&mut self.pc, &mut self.mmu, false);
-                opcodes::ld_r1r2_nn(&mut self.pc, &mut self.d, &mut self.e, nn);
+                opcodes::ld_rr_nn(&mut self.pc, &mut self.d, &mut self.e, nn);
             },
             0x12 => {
                 let de = get_address(self.d, self.e);
@@ -86,7 +94,7 @@ impl Gameboy {
             },
             0x21 => {
                 let nn = get_nn(&mut self.pc, &mut self.mmu, false);
-                opcodes::ld_r1r2_nn(&mut self.pc, &mut self.h, &mut self.l, nn);
+                opcodes::ld_rr_nn(&mut self.pc, &mut self.h, &mut self.l, nn);
             },
             0x22 => {
                 let hl = get_address(self.h, self.l);
@@ -103,6 +111,10 @@ impl Gameboy {
             0x2E => {
                 let n = get_n(&mut self.pc, &mut self.mmu);
                 opcodes::ld_r_n(&mut self.pc, &mut self.l, n);
+            },
+            0x31 => {
+                let nn = get_nn(&mut self.pc, &mut self.mmu, false);
+                opcodes::ld_sp_nn(&mut self.pc, &mut self.sp, nn);
             },
             0x32 => {
                 let hl = get_address(self.h, self.l);
@@ -323,27 +335,59 @@ impl Gameboy {
             0xAF => {
                 opcodes::xor_a(&mut self.pc, self.a, &mut self.f);
             },
+            0xC1 => {
+                opcodes::pop_rr(&mut self.pc, &mut self.mmu, &mut self.sp, &mut self.b, & mut self.c);
+            },
             0xC3 => {
                 let nn = get_nn(&mut self.pc, &mut self.mmu, true);
                 opcodes::jp_nn(&mut self.pc, nn);
+            },
+            0xC5 => {
+                opcodes::push_rr(&mut self.pc, &mut self.mmu, &mut self.sp, self.b, self.c);
+            },
+            0xD1 => {
+                opcodes::pop_rr(&mut self.pc, &mut self.mmu, &mut self.sp, &mut self.d, &mut self.e);
+            },
+            0xD5 => {
+                opcodes::push_rr(&mut self.pc, &mut self.mmu, &mut self.sp, self.d, self.e);
             },
             0xE0 => {
                 let n = get_n(&mut self.pc, &mut self.mmu);
                 opcodes::ld_mem_n_r(&mut self.pc, &mut self.mmu, 0xFF00+(n as u16), self.a);
             },
+            0xE1 => {
+                opcodes::pop_rr(&mut self.pc, &mut self.mmu, &mut self.sp, &mut self.h, &mut self.l);
+            },
             0xE2 => {
-                opcodes::ld_mem_r1_r2(&mut self.pc, &mut self.mmu, 0xFF00+self.c, self.a);
-            }
+                opcodes::ld_mem_r1_r2(&mut self.pc, &mut self.mmu, self.c, self.a);
+            },
+            0xE5 => {
+                opcodes::push_rr(&mut self.pc, &mut self.mmu, &mut self.sp, self.h, self.l);
+            },
             0xEA => {
                 let nn = get_nn(&mut self.pc, &mut self.mmu, true);
                 opcodes::ld_mem_nn_r(&mut self.pc, &mut self.mmu, nn, self.a);
             },
             0xF0 => {
                 let n = get_n(&mut self.pc, &mut self.mmu);
-                opcodes::ld_r_mem_n(&mut self.pc, &mut self.mmu, 0xFF00+(n as u16), &mut self.a);
+                opcodes::ld_r_mem_n(&mut self.pc, &mut self.mmu, n, &mut self.a);
+            },
+            0xF1 => {
+                opcodes::pop_rr(&mut self.pc, &mut self.mmu, &mut self.sp, &mut self.a, &mut self.f);
             },
             0xF2 => {
-                opcodes::ld_r1_mem_r2(&mut self.pc, &mut self.mmu, &mut self.c, 0xFF00+self.a);
+                opcodes::ld_r1_mem_r2(&mut self.pc, &mut self.mmu, &mut self.c, self.a);
+            },
+            0xF5 => {
+                opcodes::push_rr(&mut self.pc, &mut self.mmu, &mut self.sp, self.a, self.f);
+            },
+            0xF8 => {
+                let n = get_n(&mut self.pc, &mut self.mmu);
+                opcodes::ld_rr_spn(&mut self.pc, &mut self.h, &mut self.l, self.sp, n, &mut self.f);
+            },
+            0xF9 => {
+                let hl = get_address(self.h, self.l);
+                opcodes::ld_sp_hl(&mut self.pc, &mut self.sp, hl);
             },
             0xFA => {
                 let rr = get_nn(&mut self.pc, &mut self.mmu, true);

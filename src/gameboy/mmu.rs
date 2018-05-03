@@ -70,6 +70,14 @@ impl MMU {
         self.write(*sp, data);
     }
 
+    pub fn pop(&mut self, sp: &mut u16) -> u8 {
+        let val = self.read(*sp);
+        self.write(*sp, 0);
+        *sp += 8;
+
+        val
+    }
+
     pub fn load_game(&mut self, bank_0: Vec<u8>, bank_1: Vec<u8>) {
         self.rom_bank_0 = bank_0;
         self.rom_bank_nn = bank_1;
