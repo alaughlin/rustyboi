@@ -18,6 +18,7 @@ pub struct MMU {
     pub vram: Vec<u8>,
     pub eram: Vec<u8>,
     pub wram: Vec<u8>,
+    pub io: Vec<u8>,
     pub zram: Vec<u8>,
 }
 
@@ -30,6 +31,7 @@ impl Default for MMU {
             vram: vec![0; 8192],
             eram: vec![0; 8192],
             wram: vec![0; 8192],
+            io: vec![0; 128],
             zram: vec![0; 128],
         }
     }
@@ -83,6 +85,28 @@ impl MMU {
         self.rom_bank_nn = bank_1;
     }
 
+    pub fn init_io(&mut self) {
+        self.write(0xFF10, 0x80);
+        self.write(0xFF11, 0xBF);
+        self.write(0xFF12, 0xF3);
+        self.write(0xFF14, 0xBF);
+        self.write(0xFF16, 0x3F);
+        self.write(0xFF19, 0xBF);
+        self.write(0xFF1A, 0x7F);
+        self.write(0xFF1B, 0xFF);
+        self.write(0xFF1C, 0x9F);
+        self.write(0xFF1E, 0xBF);
+        self.write(0xFF20, 0xFF);
+        self.write(0xFF23, 0xBF);
+        self.write(0xFF24, 0x77);
+        self.write(0xFF25, 0xF3);
+        self.write(0xFF26, 0xF1);  // TODO: this value varies based on cart type
+        self.write(0xFF40, 0x91);
+        self.write(0xFF47, 0xFC);
+        self.write(0xFF48, 0xFF);
+        self.write(0xFF49, 0xFF);
+    }
+
     fn get_memory_slice(&mut self, address: u16) -> (&mut Vec<u8>, u16) {
         if address < 0x4000 {
             return (&mut self.rom_bank_0, 0x0000);
@@ -94,6 +118,8 @@ impl MMU {
             return (&mut self.eram, 0xA000);
         } else if address < 0xE000 {
             return (&mut self.wram, 0xC000);
+        } else if address < 0xFF80 {
+            return (&mut self.io, 0xFF00);
         } else if address >= 0xFF80 && address <= 0xFFFE {
             return (&mut self.zram, 0xFF80);
         }

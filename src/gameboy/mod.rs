@@ -30,7 +30,7 @@ impl Default for Gameboy {
 
     fn default() -> Gameboy {
         Gameboy {
-            a: 0x01,
+            a: 0x01,  // TODO: this value varies based on cart type
             b: 0x00,
             c: 0x13,
             d: 0x00,
@@ -68,6 +68,10 @@ impl Gameboy {
         };
 
         &title
+    }
+
+    pub fn power_on(&mut self) {
+        self.mmu.init_io();
     }
 
     pub fn step(&mut self) {
