@@ -55,7 +55,6 @@ impl Gameboy {
 
     pub fn step(&mut self) {
         self.cpu.execute(&mut self.mmu);
-
     }
 }
 
