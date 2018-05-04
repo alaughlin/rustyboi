@@ -8,8 +8,8 @@ use std::fs::File;
 use std::str;
 
 pub struct Gameboy {
-    pub cpu: cpu::CPU,
-    pub mmu: mmu::MMU,
+    cpu: cpu::CPU,
+    mmu: mmu::MMU,
 }
 
 const ROM_BANK_SIZE: u16 = 16384;
@@ -18,13 +18,17 @@ impl Default for Gameboy {
 
     fn default() -> Gameboy {
         Gameboy {
-            cpu: cpu::CPU { ..Default::default() },
-            mmu: mmu::MMU { ..Default::default() },
+            cpu: cpu::CPU::new(),
+            mmu: mmu::MMU::new()
         }
     }
 }
 
 impl Gameboy {
+
+    pub fn new() -> Gameboy {
+        Default::default()
+    }
 
     // TODO: take a path to a rom
     pub fn load_game(&mut self) {
@@ -39,14 +43,7 @@ impl Gameboy {
     }
 
     pub fn get_game_title(&mut self) -> &str {
-        let buffer = &self.mmu.rom_bank_0[0x134..0x143];
-
-        let title = match str::from_utf8(buffer) {
-            Ok(v) => v,
-            Err(e) => panic!("Invalid UTF-8 sequence for game title: {}", e),
-        };
-
-        &title
+        self.mmu.get_game_title()
     }
 
     pub fn power_on(&mut self) {
@@ -55,6 +52,10 @@ impl Gameboy {
 
     pub fn step(&mut self) {
         self.cpu.execute(&mut self.mmu);
+    }
+
+    pub fn print_registers(&mut self) {
+        self.cpu.print_registers();
     }
 }
 

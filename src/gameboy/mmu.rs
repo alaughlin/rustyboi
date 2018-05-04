@@ -1,3 +1,5 @@
+use std::str;
+
 // Memory Layout:
 // 0000-3FFF   16KB ROM Bank 00            (ROM)  (in cartridge, fixed at bank 00)
 // 4000-7FFF   16KB ROM Bank 01..NN        (ROM)  (in cartridge, switchable bank number)
@@ -13,17 +15,16 @@
 // FFFF        Interrupt Enable Register
 
 pub struct MMU {
-    pub rom_bank_0: Vec<u8>,
-    pub rom_bank_nn: Vec<u8>,
-    pub vram: Vec<u8>,
-    pub eram: Vec<u8>,
-    pub wram: Vec<u8>,
-    pub io: Vec<u8>,
-    pub zram: Vec<u8>,
+    rom_bank_0: Vec<u8>,
+    rom_bank_nn: Vec<u8>,
+    vram: Vec<u8>,
+    eram: Vec<u8>,
+    wram: Vec<u8>,
+    io: Vec<u8>,
+    zram: Vec<u8>,
 }
 
 impl Default for MMU {
-
     fn default() -> MMU {
         MMU {
             rom_bank_0: vec![0; 16384],
@@ -38,6 +39,10 @@ impl Default for MMU {
 }
 
 impl MMU {
+
+    pub fn new() -> MMU {
+        Default::default()
+    }
 
     pub fn write(&mut self, address: u16, data: u8) {
         let (memory_slice, offset) = self.get_memory_slice(address);
@@ -83,6 +88,15 @@ impl MMU {
     pub fn load_game(&mut self, bank_0: Vec<u8>, bank_1: Vec<u8>) {
         self.rom_bank_0 = bank_0;
         self.rom_bank_nn = bank_1;
+    }
+
+    pub fn get_game_title(&mut self) -> &str {
+        let buffer = &self.rom_bank_0[0x134..0x144];
+
+        match str::from_utf8(buffer) {
+            Ok(v) => v.trim_right_matches(char::from(0)),
+            Err(e) => panic!("Invalid UTF-8 sequence for game title: {}", e)
+        }
     }
 
     pub fn init_io(&mut self) {

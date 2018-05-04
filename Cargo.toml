@@ -3,4 +3,6 @@ name = "rustyboi"
 version = "0.1.0"
 authors = ["adamlaughlin <adamlaughlin@outlook.com>"]
 
-[dependencies]
+[dependencies.sdl2]
+sdl2 = "0.31.0"
+features = ["gfx"]

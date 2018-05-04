@@ -1,16 +1,16 @@
 use gameboy::{ mmu, opcodes };
 
-pub struct Registers {
-    pub a: u8,
-    pub b: u8,
-    pub c: u8,
-    pub d: u8,
-    pub e: u8,
-    pub f: u8,
-    pub h: u8,
-    pub l: u8,
-    pub m: u8,
-    pub t: u8,
+struct Registers {
+    a: u8,
+    b: u8,
+    c: u8,
+    d: u8,
+    e: u8,
+    f: u8,
+    h: u8,
+    l: u8,
+    m: u8,
+    t: u8,
 }
 
 // f: flag register
@@ -36,16 +36,16 @@ impl Default for Registers {
 }
 
 #[derive(Default)]
-pub struct Clock {
-    pub m: u8,
-    pub t: u8,
+struct Clock {
+    m: u8,
+    t: u8,
 }
 
 pub struct CPU {
-    pub registers: Registers,
-    pub clock: Clock,
-    pub pc: u16,
-    pub sp: u16,
+    registers: Registers,
+    clock: Clock,
+    pc: u16,
+    sp: u16,
 }
 
 impl Default for CPU {
@@ -61,6 +61,10 @@ impl Default for CPU {
 }
 
 impl CPU {
+
+    pub fn new() -> CPU {
+        Default::default()
+    }
 
     pub fn execute(&mut self, mmu: &mut mmu::MMU) {
         let opcode = mmu.read(self.pc);
@@ -426,6 +430,10 @@ impl CPU {
         };
 
         update_time_registers_and_clock(&mut self.registers, &mut self.clock, m, t);
+    }
+
+    pub fn print_registers(&mut self) {
+        println!("\nRegisters:\na: {:x}\nb: {:x}\nc: {:x}\nd: {:x}\ne: {:x}\nf: {:x}\nh: {:x}\nl: {:x}", self.registers.a, self.registers.b, self.registers.c, self.registers.d, self.registers.e, self.registers.f, self.registers.h, self.registers.l);
     }
 }
 
